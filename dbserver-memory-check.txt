@@ -1,0 +1,86 @@
+#!/bin/bash
+# This script is to validate standard DB server memory parameters
+
+FuncREADOSPARAMS () {
+
+Ram=$(free -b | awk '/Mem/ {print $2}')                                                      # RAM in Bytes
+Shmax=$(awk '/^kernel.shmmax/ {print $3}' /etc/sysctl.conf)                                  # SHAMMAX in bytes
+Shpages=$(awk '/^kernel.shmall/ {print $3}' /etc/sysctl.conf)                                # SHMALL in pages
+Smemlock=$(awk '!/^#/ && /soft|Soft/ && /memlock/ {print $4}' /etc/security/limits.conf)     # Soft memlock in KB
+Hmemlock=$(awk '!/^#/ && /hard|Hard/ && /memlock/ {print $4}' /etc/security/limits.conf)     # Hard memlock in KB
+Hugepages_T=$(awk '/HugePages_Total/ {print $2}' /proc/meminfo)                              # Hugh pages total
+ }
+
+FuncDBINSTANCESCHECK () {
+
+ORA_HOMES=$(awk '!/^$|^#/ {print $0}' /etc/oratab | cut -d":" -f2 | uniq)
+for i in ${ORA_HOMES[@]}; do
+  echo -e "Instances running from \"$i\" on this server"
+  init_files=$(ls $i/dbs | awk '/init/ {print $0}'| sed -e 's/init//g' -e 's/_.$//' -e 's/.ora_*$//' -e '/^$/d')
+     for j in ${init_files}; do
+       instances+=$(ps aux|awk '/_pmon_/ {print $NF}'|grep -v "NF"| cut -d"_" -f3 |grep -w "${j}")" "
+     done
+      if [ -z ${instances[@]} ]; then
+       echo -e "\e[31mThere are no instances running from this Home\e[0m"
+      else
+      for k in ${instances[@]}; do
+           # "-" is used before EOF as to allow indentation when closing HERE documents with EOF but only to use tabs
+      Sga="`${i}/bin/sqlplus -s / as sysdba <<-EOF
+                                                                set pagesize 0 heading off  feedback off
+                                                                select replace(upper(value),' ','')
+                                                                from v\\$parameter where  name='sga_target';
+                                                                EOF`"                                                                                                  #its is used tabs for space , but not actuals spaces
+       echo -e "-->\e[32m ${k} \t SGA = ${Sga} \e[0m"
+      done
+      fi
+    instances=""
+    init_files=""
+done
+}
+
+Display () {
+
+echo -e "RAM          = \e[32m$(echo $(expr $(expr ${Ram} / 1024) / 1024 ) ) Mb \e[0m"
+if [ ! -z ${Shmax} ];then
+ echo -e "kernel.shmmax = \e[32m$(echo ${Shmax})(In bytes) \e[0m"
+else
+ echo -e "kernel.shmmax = \e[31mNOTCONFIGURED"
+fi
+if [ ! -z ${Shpages} ];then
+ echo -e "kernel.shmall = \e[32m$(echo ${Shpages})(pages)\e[0m"
+else
+ echo -e "kernel.shmall = \e[31mNOTCONFIGURED"
+fi
+if [ ! -z $Smemlock} ];then
+ echo -e "soft memlock = \e[32m$(echo ${Smemlock})kb\e[0m"
+else
+ echo -e "soft memlock = \e[31mNOTCONFIGURED"
+fi
+if [ ! -z ${Hmemlock} ];then
+ echo -e "hard memlock = \e[32m$(echo ${Hmemlock})kb\e[0m"
+else
+ echo -e "hard memlock = \e[31mNOTCONFIGURED"
+fi
+
+}
+
+######## Main Script #########
+
+
+FuncREADOSPARAMS
+
+if [ -f /etc/oratab ]; then
+ FuncDBINSTANCESCHECK
+else
+ echo -e "\e[31mTHIS IS NOT A DB SERVER\e[0m\n"
+ exit 1
+fi
+
+if [ -z $Hughepages_T ]; then
+ echo -e "\e[31mHugepages not configured on this system\e[0m"
+ Display
+else
+ echo -e "\e[32mHugepages configured on the system\e[0m"
+ echo -e "nr.hugepages = ${Hugepages_T}"
+ Display
+fi

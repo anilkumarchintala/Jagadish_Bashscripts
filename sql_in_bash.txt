@@ -1,0 +1,58 @@
+======Returning a value through the EXIT command
+
+#!/bin/bash
+sqlplus -s gennick/secret << EOF
+COLUMN tab_count NEW_VALUE table_count
+SELECT COUNT(*) tab_count FROM user_all_tables;
+EXIT table_count
+EOF
+
+let "tabcount = $?"
+echo You have $tabcount tables.
+
+
+
+====Redirecting standard output to a file
+
+#!/bin/bash
+sqlplus -s gennick/secret > tabs << EOF
+SET SERVEROUTPUT ON
+SET FEEDBACK OFF
+DECLARE
+   tab_count NUMBER;
+BEGIN
+   SELECT COUNT(*) INTO tab_count
+   FROM user_all_tables;
+
+   DBMS_OUTPUT.PUT_LINE(tab_count);
+END;
+/
+EXIT
+EOF
+
+tabcount=`cat tabs`
+echo You have $tabcount tables.
+
+
+===Spooling to a file ===
+
+sqlplus -s gennick/secret << EOF
+SET PAGESIZE 0
+SPOOL tabs
+SELECT COUNT(*) FROM user_all_tables;
+EXIT
+EOF
+
+tabcount=`cat tabs`
+echo You have $tabcount tables.
+
+====Capturing standard output directly to a shell variable
+
+#!/bin/bash
+tabcount=`sqlplus -s gennick/secret << EOF
+SET PAGESIZE 0
+SELECT COUNT(*) FROM user_all_tables;
+EXIT
+EOF`
+
+echo You have $tabcount tables.

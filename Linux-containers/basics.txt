@@ -1,0 +1,19 @@
+--> Linux kernel feature that helps to enable container technology
+     1.) Namespaces
+     2.) Control Groups (cgroups)
+     3.) SELinux
+
+--> Podman is a tool for managing containers,container images and image registries
+
+--> 3 challenges of a container cluster architecture
+    Orchestration
+    Scheduling
+    Isolation
+
+--> Provsioning a Containerized Database server
+
+
+
+
+
+

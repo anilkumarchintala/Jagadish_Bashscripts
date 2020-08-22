@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# This script creates new secondary network ip address for a host
+NET_SCR="/etc/sysconfig/network-scripts"
+FARG="$1"
+
+Funcgen_netfiles ()
+{
+cd ${NET_SCR}
+for ((i=0 ; i < $FARG ; i++));do
+[ ! -f "${NET_SCR}/ifcfg-${selected}:${i}" ] && cp ${NET_SCR}/ifcfg-${selected} ${NET_SCR}/ifcfg-${selected}:${i} || echo -e "ifcfg-${selected}:${i} already exists"
+done
+}
+
+# Main script
+
+if [ "$1" > 0 ];then 
+echo -e "Creating \"$1\" secondary ip addresses"
+echo -e "Interfaces running on the server:"
+/sbin/ifconfig -a | grep -E "RUNNING|running" |cut -d":" -f1 | uniq
+read -ep "Please select the interface name from above:"  selected
+Funcgen_netfiles
+else
+echo -e "Usage: $0 [number of secondary ip addresses] , Exiting"
+exit 0
+fi
+
+echo "..Selected IP addresses are.."
+IPADDR=$(ifconfig ${selected} |awk '/inet/ {print $2}')
+RANGE+=( $(ifconfig ${selected} |awk '/inet/ {print $2"\n"$NF}' | cut -d"." -f4) )
+TWENTYFOURBITS="$(ifconfig ${selected} |awk '/inet/ {print $2"\n"$NF}' |awk 'BEGIN {FS=".";OFS="."} {print $1,$2,$3}'| uniq)"
+for ((i=${RANGE[0]};i<${RANGE[1]};i++));do
+VER="$TWENTYFOURBITS.${i}"
+ping -c 1 ${VER}  1>/dev/null
+[ "$?" = 0 ] && continue || NEWIPS+=( ${VER} )
+[ ${#NEWIPS[@]} = ${FARG} ] && break
+done
+echo -e "${NEWIPS[@]}"
+
+

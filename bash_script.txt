@@ -1,0 +1,61 @@
+#!/bin/bash
+
+#Global variables
+
+ORAHOME=""
+GGSHOME=""
+DBFSFS=""
+LOGNAME="DB_Maintainence_`date "+%d%m%y%H`.log
+
+
+# Fucntion for Application maintainence,Which is Choice 1
+
+FuncDBAPPMNTS () {
+
+}
+
+# Fucntion for Application maintainence,Which is Choice 2
+
+FuncDBRESTART () {
+dbs=$(${ORAHOME}/bin/srvctl config database)
+instances=$(ps -ef
+for i in ${dbs[@]};do
+instances
+}
+
+# Fucntion for OS maintainence,Which is Choice 3
+
+FuncOSMNTS () {
+
+}
+
+otee () {
+tee -a ${LOGNAME}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Main Script
+
+
+echo -e "\t=========================
+\t\tMAIN MENU
+\t========================="
+\t1) DB-RESTART
+\t2) DB-Application Maintainence
+\t3) DB-OS Maintainence
+\t4) Golden Gate Maintainence
+\n
+echo "Choose the Maintainence:"

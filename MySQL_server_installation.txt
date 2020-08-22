@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# This script used for Installation and setup of MYSQL server( standard or community edition)
+# Specifically on RHEL 7 / Oracle linux 7
+# Linux server should have internet connectivity
+
+FuncVariables () {
+REPOURL="https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm"
+STATUS=""
+DIGEST=""
+}
+
+
+FuncDownloadrepo () {
+rm -rf /tmp/mysql80-community-release-el7-3.noarch.rpm
+curl -L "https://dev.mysql.com/get/mysql80-community-release-el7-3.noarch.rpm" -o "/tmp/mysql80-community-release-el7-3.noarch.rpm" --silent 2>/dev/null
+DIGEST="$(md5sum /tmp/mysql80-community-release-el7-3.noarch.rpm 2>/dev/null | awk -F" " ' {print $1} ')"
+if [ ${DIGEST} = "893b55d5d885df5c4d4cf7c4f2f6c153" ];then
+echo "Download successful and verified"
+else
+echo "There is an issue with Yum repo download. Please verify on --> https://dev.mysql.com/downloads/repo/yum/"
+exit 
+fi
+}
+
+FuncInstallRepo () {
+if [ ! -f /etc/yum.repos.d/mysql-community.repo ] ;then
+echo "Installating the Yum Repo"
+/usr/bin/rpm -ivh /tmp/mysql80-community-release-el7-3.noarch.rpm  1>/tmp/Mysql56_installation_`date +%Y%m%d`.log
+else
+echo "Repo already exists in YUM..Proceecing with MySql server installation"
+fi
+}
+
+FuncMySqlInstall () {
+if [ ${CHOICE} = "1" ];then
+echo "Installaing MySQL Server 5.6"
+#/bin/sed -i.bkp -e '/mysql57-community/,/gpgkey/ {s/enabled=0/enabled=1/g}' -e '/mysql80-community/,/gpgkey/ {s/enabled=1/enabled=0/g}'  /etc/yum.repos.d/mysql-community.repo
+/bin/yum-config-manager --disable mysql80-community 1>/dev/null
+/bin/yum-config-manager --enable mysql56-community 1>/dev/null
+/bin/yum install mysql-community-server -y  1>>/tmp/Mysql56_installation_`date +%Y%m%d`.log
+/bin/systemctl start mysqld 1>>/tmp/Mysql56_installation_`date +%Y%m%d`.log
+else
+/bin/yum-config-manager --enable mysql80-community 1>/dev/null
+/bin/yum-config-manager --disable mysql56-community 1>/dev/null
+/bin/yum install mysql-community-server -y 1>/tmp/Mysql80_installation_`date +%Y%m%d`.log
+/bin/systemctl start mysqld 1>>/tmp/Mysql80_installation_`date +%Y%m%d`.log
+fi
+}
+
+
+FuncVerify_install () {
+STATUS="$(/bin/systemctl status mysqld | grep -E "running" )"
+if [[ ${STATUS} =~ .*running.* ]]; then
+return 0
+else
+return 1
+fi
+}
+
+# Main Script 
+FuncVariables
+echo "===Welcome to MySQl Server installation and setup==="
+echo "    MAIN MENU    "
+echo "1.) MYSQL Server 5.6.X"
+echo "2.) MYSQL Server 8.0.X"
+echo "Please enter your choice:"
+read CHOICE
+case ${CHOICE} in
+              1) 
+                echo "MySql server 5.6.X installation in progress"
+                FuncDownloadrepo
+                FuncInstallRepo
+                rm -rf /tmp/mysql80-community-release-el7-3.noarch.rpm
+                FuncMySqlInstall
+                FuncVerify_install
+                if [ $? = 0 ];then
+                echo "Installation completed successfully.Please login and change root password"
+                else
+                echo "Mysqld service not running. Please check the installation log"
+                fi
+                ;;
+              2)
+                echo "MySql server 8.0.X installation in progress"
+                FuncDownloadrepo
+                FuncInstallRepo
+                rm -rf /tmp/mysql80-community-release-el7-3.noarch.rpm
+                FuncMySqlInstall
+                FuncVerify_install
+                if [ $? = 0 ];then
+                echo "Installation completed successfully.Please login and change root password"
+                else
+                echo "Mysqld service not running. Please check the installation log"
+                echo "Installation completed successfully.Please login and change root password"
+                fi
+                ;;
+              *)
+                echo "Wrong Choice..Exiting"
+                exit;;
+esac

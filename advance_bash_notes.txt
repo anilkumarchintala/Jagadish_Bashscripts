@@ -1,0 +1,197 @@
+Advance bash scripting - Notes
+
+1.) ROOT_UID=0 # Only users with $UID 0 have root privileges
+
+if [ "$UID" -ne "$ROOT_UID" ]
+then
+ echo "Must be root to run this script."
+ exit $E_NOTROOT
+fi 
+
+
+2.) E_WRONGARGS=85 # Non-numerical argument (bad argument format)
+
+exit ${E_WRONGARGS}
+
+
+3.) Rotating log
+
+tail -n $lines messages > mesg.temp # Save last section of message log file.
+mv mesg.temp messages # Rename it as system log file.
+
+
+4.) Null Command(:)
+
+null command [colon]. This is the shell equivalent of a "NOP" (no op, a do-nothing operation). It
+may be considered a synonym for the shell builtin true. The ":" command is itself a Bash builtin, and
+its exit status is true (0).
+
+
+5.) A listing of commands within parentheses starts a subshell.
+
+6.) $$ = procesid of the script
+
+7.) Brace expansion.
+
+echo \"{These,words,are,quoted}\" # " prefix and suffix
+# "These" "words" "are" "quoted"
+
+cat {file1,file2,file3} > combined_file
+# Concatenates the files file1, file2, and file3 into combined_file.
+
+cp file22.{txt,backup}
+# Copies "file22.txt" to "file22.backup"
+
+
+8.) code block
+
+{
+   }
+
+example:-
+
+#!/bin/bash
+# rpm-check.sh
+# Queries an rpm file for description, listing,
+#+ and whether it can be installed.
+# Saves output to a file.
+#
+# This script illustrates using a code block.
+SUCCESS=0
+E_NOARGS=65
+if [ -z "$1" ]
+then
+Advanced Bash-Scripting Guide
+Chapter 3. Special Characters 15
+ echo "Usage: `basename $0` rpm-file"
+ exit $E_NOARGS
+fi
+{ # Begin code block.
+ echo
+ echo "Archive Description:"
+ rpm -qpi $1 # Query description.
+ echo
+ echo "Archive Listing:"
+ rpm -qpl $1 # Query listing.
+ echo
+ rpm -i --test $1 # Query whether rpm file can be installed.
+ if [ "$?" -eq $SUCCESS ]
+ then
+ echo "$1 can be installed."
+ else
+ echo "$1 cannot be installed."
+ fi
+ echo # End code block.
+} > "$1.test" # Redirects output of everything in block to file.
+echo "Results of rpm test in file $1.test"
+# See rpm man page for explanation of options.
+exit 0
+
+
+9.) paranthesis - () - opens a new subshell
+but double braces {} dont open a new shell
+
+
+10.)
+rpm -i --test $1 # Query whether rpm file can be installed.
+
+11.) 
+
+1>  -- stdout
+2>  -- stderr
+&>  -- redirect both stdout and stderr
+
+12.) "-" echoes stdin, in this case keyboarded user input, to stdout
+
+(cd /source/directory && tar cf - . ) | (cd /dest/directory && tar xpvf -)
+
+it tar's the source directory and untars the file at target directory
+
+12.) Quoting:-
+
+List="one two three"
+
+for a in $List # Splits the variable in parts at whitespace.
+do
+ echo "$a"
+done
+# one
+# two
+# three
+echo "---"
+for a in "$List" # Preserves whitespace in a single variable.
+do # 
+ echo "$a"
+done
+# one two three
+
+
+13.) escape
+
+\ - escape spaces
+\n - new line
+\b - backspace
+\r - return
+
+14.) testing
+
+[ - it is a dedicated command that performs test
+[[ ]] - it is keyword that performs comparision
+
+
+15.) Airthematic expansion to perform airthematic comparisions
+
+The (( ... )) and let ... constructs return an exit status, according to whether the arithmetic expressions.they evaluate expand to a non-zero value. 
+These arithmetic-expansion constructs may therefore be used to perform arithmetic comparisons.
+
+(( 0 && 1 )) # Logical AND
+echo $? # 1 ***
+
+# And so ...
+let "num = (( 0 && 1 ))"
+echo $num # 0
+
+# But ...
+let "num = (( 0 && 1 ))"
+echo $? # 1 ***
+(( 200 || 11 )) # Logical OR
+echo $? # 0 ***
+
+# ...
+let "num = (( 200 || 11 ))"
+echo $num # 1
+let "num = (( 200 || 11 ))"
+echo $? # 0 ***
+
+
+
+16.)  if condition evaluating to "True" or "False". and if condition evaluating to NULL,it is considered as "False"
+
+17.) Quoting:-
+
+List="one two three"
+
+for a in $List                # Splits the variable in parts at whitespace.
+do
+ echo "$a"
+done
+# one
+# two
+# three
+
+echo "---"
+for a in "$List"              # Preserves whitespace in a single variable.
+do                            # ^ ^
+ echo "$a"
+done
+# one two three
+
+
+18.) 
+
+if [ -z "$var" ]  - if string is NULL
+if [ -n '$var" ]  - if sting is not NULL
+
+19.)
+
+

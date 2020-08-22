@@ -1,0 +1,33 @@
+while read -r line; do
+if [ ! -z "`echo "$line" | grep -E "top -"`" ] || [ ! -z "`echo "$line" | grep -E "OAS Manager" | awk '{ if ($9 > 75) { print $0} }'`" ]; then
+  echo "$line"
+fi
+done < /opt/oracle/oak/oswbb/archive/oswtop/deri0lcak0_top_20.04.01.1200.dat
+
+
+=====
+
+#!/bin/bash
+
+counter=0
+for i in {00..23};do
+while read -r line; do
+if [ ! -z "`echo "$line" | grep -E "top -"`" ];then
+counter=++counter
+topline="${line}"
+continue
+elif [ ! -z "`echo "$line" | grep -E "OAS Manager" | awk '{ if ($9 > 75) { print $0} }'`" ];then
+    echo "$topline"
+    echo "$line"
+    counter=0
+  fi
+done < /opt/oracle/oak/oswbb/archive/oswtop/deri0lcak0_top_20.04.01.$i00.dat
+done
+
+
+top--> with time
+OAS manager
+
+
+
+
